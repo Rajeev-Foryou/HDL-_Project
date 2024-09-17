@@ -1,0 +1,40 @@
+/**
+ * ALU (Arithmetic Logic Unit) implementation in HDL
+ */
+
+CHIP ALU {
+    IN x[16], y[16],  // 16-bit inputs
+       zx, // zero the a input
+       nx, // negate the a input
+       zy, // zero the b input
+       ny, // negate the b input
+       f,  // compute out = a + b (if 1) or out = a & b (if 0)
+       no; // negate the output
+
+    OUT out[16], // 16-bit output
+        zr,      // 1 if out=0
+        ng;      // 1 if out<0
+
+    PARTS:
+    Mux16(a=x, b[0..15]=false, sel=zx, out=xMux);
+    Mux16(a=y, b[0..15]=false, sel=zy, out=yMux);
+
+    Not16(in=xMux, out=notX);
+    Mux16(a=xMux, b=notX, sel=nx, out=readyX);
+    Not16(in=yMux, out=notY);
+    Mux16(a=yMux, b=notY, sel=ny, out=readyY);
+
+
+    And16(a=readyX, b=readyY, out=andOut);
+    Add16(a=readyX, b=readyY, out=addOut);
+    Mux16(a=andOut, b=addOut, sel=f, out=fOut);
+
+
+    Not16(in=fOut, out=fNotOut);
+    Mux16(a=fOut, b=fNotOut, sel=no, out=out, out[15]=ng, out[0..7]=zrLow ,out[8..15]=zrHigh);
+
+    Or8Way(in=zrLow, out=or1Out);
+    Or8Way(in=zrHigh, out=or2Out);
+    Or(a=or1Out, b=or2Out, out=or3Out);
+    Not(in=or3Out, out=zr);
+    }
